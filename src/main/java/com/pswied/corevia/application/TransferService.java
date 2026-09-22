@@ -31,15 +31,18 @@ public class TransferService {
     private final CoreBankingGateway coreBankingGateway;
     private final TransactionRepository transactionRepository;
     private final IdempotencyRecordRepository idempotencyRecordRepository;
+    private final IdempotencyService idempotencyService;
 
     public TransferService(
         CoreBankingGateway coreBankingGateway,
         TransactionRepository transactionRepository,
-        IdempotencyRecordRepository idempotencyRecordRepository
+        IdempotencyRecordRepository idempotencyRecordRepository,
+        IdempotencyService idempotencyService
     ) {
         this.coreBankingGateway = coreBankingGateway;
         this.transactionRepository = transactionRepository;
         this.idempotencyRecordRepository = idempotencyRecordRepository;
+        this.idempotencyService = idempotencyService;
     }
 
     public CustomerResponse getCustomer(String customerId) {
@@ -70,17 +73,25 @@ public class TransferService {
         validateRequest(request);
 
         String fingerprint = fingerprint(request);
-        Optional<IdempotencyRecord> existing = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
-        if (existing.isPresent()) {
-            if (!existing.get().getRequestFingerprint().equals(fingerprint)) {
-                throw new IllegalStateException("Idempotency key was previously used with a different request");
-            }
-            Transaction existingTransaction = transactionRepository.findByTransactionId(existing.get().getTransactionId())
-                .orElseThrow(() -> new IllegalStateException("Existing idempotent transaction was not found"));
-            return toCreateResponse(existingTransaction, correlationId);
-        }
 
         String transactionId = "TXN-" + Instant.now().toEpochMilli();
+
+        // Try to claim the idempotency key early to avoid race conditions.
+        var claim = idempotencyService.claimOrGetExisting(idempotencyKey, fingerprint, transactionId, TransactionState.RECEIVED);
+        if (claim.isPresent()) {
+            IdempotencyRecord rec = claim.get();
+            if (!rec.getRequestFingerprint().equals(fingerprint)) {
+                throw new IllegalStateException("Idempotency key was previously used with a different request");
+            }
+
+            // If the claim points to an existing transaction, return it
+            var maybeTx = transactionRepository.findByTransactionId(rec.getTransactionId());
+            if (maybeTx.isPresent()) {
+                return toCreateResponse(maybeTx.get(), correlationId);
+            }
+            // otherwise fall through to create the transaction for this claim
+        }
+
         Transaction transaction = new Transaction(
             transactionId,
             request.sourceAccount(),
@@ -113,12 +124,12 @@ public class TransferService {
         }
         transactionRepository.save(transaction);
 
-        idempotencyRecordRepository.save(new IdempotencyRecord(
-            idempotencyKey,
-            fingerprint,
-            transactionId,
-            transaction.getStatus()
-        ));
+        // update idempotency record status to reflect final transaction state
+        try {
+            idempotencyService.updateStatus(idempotencyKey, transaction.getStatus());
+        } catch (Exception ignore) {
+            // Best-effort update; do not fail the transfer because out-of-band idempotency update failed
+        }
 
         return toCreateResponse(transaction, correlationId);
     }

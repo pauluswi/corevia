@@ -88,4 +88,13 @@ public class IdempotencyRecord {
     public Instant getExpiresAt() {
         return expiresAt;
     }
+
+    public void setStatus(TransactionState status) {
+        this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
