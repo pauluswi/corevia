@@ -57,6 +57,25 @@ public class IdempotencyRecord {
         this.updatedAt = this.createdAt;
     }
 
+    // Constructor used when mapping database query results (preserve DB timestamps)
+    public IdempotencyRecord(
+        String idempotencyKey,
+        String requestFingerprint,
+        String transactionId,
+        TransactionState status,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant expiresAt
+    ) {
+        this.idempotencyKey = idempotencyKey;
+        this.requestFingerprint = requestFingerprint;
+        this.transactionId = transactionId;
+        this.status = status;
+        this.createdAt = createdAt != null ? createdAt : Instant.now();
+        this.updatedAt = updatedAt != null ? updatedAt : this.createdAt;
+        this.expiresAt = expiresAt;
+    }
+
     public Long getId() {
         return id;
     }

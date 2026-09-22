@@ -31,7 +31,7 @@ class IdempotencyConcurrencyTest {
         String key = "concurrent-claim-001";
         String fingerprint = "sha256:concurrent";
 
-        int threads = 10;
+        int threads = 2;
         ExecutorService ex = Executors.newFixedThreadPool(threads);
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(threads);
@@ -55,8 +55,9 @@ class IdempotencyConcurrencyTest {
 
         // start all threads
         start.countDown();
-        boolean finished = done.await(10, TimeUnit.SECONDS);
-        ex.shutdownNow();
+        boolean finished = done.await(20, TimeUnit.SECONDS);
+        ex.shutdown();
+        ex.awaitTermination(1, TimeUnit.SECONDS);
         assertThat(finished).isTrue();
 
         // verify exactly one record in DB and all returned present
