@@ -13,7 +13,9 @@ import com.pswied.corevia.corebanking.TransferResult;
 import com.pswied.corevia.domain.IdempotencyRecord;
 import com.pswied.corevia.domain.Transaction;
 import com.pswied.corevia.domain.TransactionState;
+import com.pswied.corevia.domain.OutboxEvent;
 import com.pswied.corevia.persistence.IdempotencyRecordRepository;
+import com.pswied.corevia.persistence.OutboxEventRepository;
 import com.pswied.corevia.persistence.TransactionRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -32,17 +34,20 @@ public class TransferService {
     private final TransactionRepository transactionRepository;
     private final IdempotencyRecordRepository idempotencyRecordRepository;
     private final IdempotencyService idempotencyService;
+    private final OutboxEventRepository outboxEventRepository;
 
     public TransferService(
         CoreBankingGateway coreBankingGateway,
         TransactionRepository transactionRepository,
         IdempotencyRecordRepository idempotencyRecordRepository,
-        IdempotencyService idempotencyService
+        IdempotencyService idempotencyService,
+        OutboxEventRepository outboxEventRepository
     ) {
         this.coreBankingGateway = coreBankingGateway;
         this.transactionRepository = transactionRepository;
         this.idempotencyRecordRepository = idempotencyRecordRepository;
         this.idempotencyService = idempotencyService;
+        this.outboxEventRepository = outboxEventRepository;
     }
 
     public CustomerResponse getCustomer(String customerId) {
@@ -105,6 +110,7 @@ public class TransferService {
 
         transaction.markValidating();
         transactionRepository.save(transaction);
+        createOutboxEvent(transaction, "TransferSubmitted");
 
         TransferResult result = coreBankingGateway.transfer(new TransferRequest(
             request.sourceAccount(),
@@ -117,10 +123,13 @@ public class TransferService {
         transaction.markSubmitted();
         if ("SUCCESS".equalsIgnoreCase(result.status())) {
             transaction.markSuccess(result.transactionId());
+            createOutboxEvent(transaction, "TransferSucceeded");
         } else if ("FAILED".equalsIgnoreCase(result.status())) {
             transaction.markFailed("CORE_BANKING_FAILED", result.status());
+            createOutboxEvent(transaction, "TransferFailed");
         } else {
             transaction.markUnknown();
+            createOutboxEvent(transaction, "TransferUnknown");
         }
         transactionRepository.save(transaction);
 
@@ -191,6 +200,21 @@ public class TransferService {
         } catch (NoSuchAlgorithmException e) {
             return UUID.nameUUIDFromBytes(raw.getBytes(StandardCharsets.UTF_8)).toString();
         }
+    }
+
+    private void createOutboxEvent(Transaction transaction, String eventType) {
+        String payload = "{"
+            + "\"eventType\":\"" + eventType + "\","
+            + "\"transactionId\":\"" + transaction.getTransactionId() + "\","
+            + "\"sourceAccount\":\"" + transaction.getSourceAccount() + "\","
+            + "\"destinationAccount\":\"" + transaction.getDestinationAccount() + "\","
+            + "\"amount\":\"" + transaction.getAmount() + "\","
+            + "\"currency\":\"" + transaction.getCurrency() + "\","
+            + "\"reference\":\"" + transaction.getReference() + "\","
+            + "\"status\":\"" + transaction.getStatus().name() + "\""
+            + "}";
+
+        outboxEventRepository.save(new OutboxEvent("transaction", transaction.getTransactionId(), eventType, payload));
     }
 
     private TransferCreateResponse toCreateResponse(Transaction transaction, String correlationId) {

@@ -80,4 +80,14 @@ public class OutboxEvent {
     public Instant getPublishedAt() {
         return publishedAt;
     }
+
+    public void markPublished() {
+        this.status = "PUBLISHED";
+        this.publishedAt = Instant.now();
+    }
+
+    public void markPending() {
+        this.status = "PENDING";
+        this.publishedAt = null;
+    }
 }
