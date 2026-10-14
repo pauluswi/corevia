@@ -1,0 +1,6 @@
+corevia:
+  security:
+    enabled: true
+    jwt-secret: dev-local-secret-change-me-very-long-key-123456
+    issuer: corevia-local
+    audience: corevia-api

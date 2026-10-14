@@ -32,7 +32,7 @@ public class SecurityConfig {
                     return;
                 }
                 authorize
-                    .requestMatchers("/actuator/health", "/h2-console/**").permitAll()
+                    .requestMatchers("/api/v1/health", "/actuator/health", "/h2-console/**").permitAll()
                     .anyRequest().authenticated();
             })
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
