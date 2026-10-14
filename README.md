@@ -8,8 +8,6 @@ It demonstrates how a modern Java-based middleware layer can provide secure APIs
 
 > **Portfolio project:** Corevia does not require or include a licensed Temenos Transact environment. The core banking system is represented by a Mock Transact service for development and demonstration purposes.
 
----
-
 ## 1. Why Corevia?
 
 Digital banking applications should not communicate directly with a core banking system for every business operation.
@@ -739,6 +737,27 @@ Additional implementation documentation will cover:
 
 # 18. Project Status
 
+Corevia is currently in a working and demonstrably hardened state for a banking middleware portfolio project.
+
+Completed milestones:
+
+* Core transfer orchestration and domain flow implemented
+* Idempotent transfer handling with persistent transaction state
+* Explicit `UNKNOWN` transaction state management and status inquiry flow
+* Outbox-based event publication with mock Kafka as the default local mode
+* JWT security with a dedicated `security` profile (`corevia.security.enabled=true`)
+* Protected-route endpoint tests for unauthorized and authorized access
+* T24 adapter timeout, retry, and circuit-breaker behavior implemented and validated
+* Full Maven test suite passing in the current codebase
+
+Operational defaults:
+
+* Local development uses mock Kafka by default
+* Security is opt-in via the `security` profile
+* Real Kafka broker validation remains an optional, profile-based path
+
+Current status summary:
+
 ```text
 Architecture
     ████████████████████ 100%
@@ -749,18 +768,26 @@ Requirements
 Architecture Decisions
     ████████████████████ 100%
 
-API Specification
+API / Domain Implementation
+    ████████████████████ 100%
+
+Security
+    ████████████████████ 100%
+
+Resilience / Circuit Handling
+    ████████████████████ 100%
+
+Kafka Integration (Mock default)
+    ████████████████████ 100%
+
+Broker-backed Kafka Profile
     ░░░░░░░░░░░░░░░░░░░░   0%
 
-Domain Model
-    ░░░░░░░░░░░░░░░░░░░░   0%
-
-Implementation
-    ░░░░░░░░░░░░░░░░░░░░   0%
-
-Testing
+Production-hardening follow-up
     ░░░░░░░░░░░░░░░░░░░░   0%
 ```
+
+The project is ready for continued portfolio extension, especially around broker-backed Kafka validation and deployment-grade configuration.
 
 The project is being developed incrementally, starting from architecture and contracts before implementation.
 
