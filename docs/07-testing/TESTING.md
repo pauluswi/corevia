@@ -70,7 +70,7 @@ Integration and end-to-end tests should be fewer but cover critical boundaries.
 | Repository  | Database behavior               | Testcontainers PostgreSQL     |
 | Integration | Multiple components             | Spring Boot Test              |
 | Contract    | T24/API integration contracts   | WireMock / MockWebServer      |
-| Kafka       | Event publication/consumption   | Testcontainers Kafka          |
+| Kafka       | Event publication/consumption   | Testcontainers Kafka + optional broker profile |
 | Security    | Authentication/authorization    | Spring Security Test          |
 | Resilience  | Timeout/failure behavior        | WireMock + Testcontainers     |
 | E2E         | Complete transaction flow       | Docker Compose/Testcontainers |
@@ -101,7 +101,11 @@ Critical infrastructure behavior should be tested against realistic dependencies
 
 Financial integration failures must be tested explicitly.
 
-### 4.6 Concurrency matters
+### 4.6 Optional broker-backed validation
+
+Kafka broker validation is kept optional for demo-focused development. The default profile remains mock-based and local-friendly, while a separate `kafka` profile enables a Testcontainers-driven broker proof-of-concept when Docker is available.
+
+### 4.7 Concurrency matters
 
 Idempotency and duplicate prevention must be tested concurrently, not only sequentially.
 

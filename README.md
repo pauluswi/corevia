@@ -781,13 +781,10 @@ Kafka Integration (Mock default)
     ████████████████████ 100%
 
 Broker-backed Kafka Profile
-    ░░░░░░░░░░░░░░░░░░░░   0%
-
-Production-hardening follow-up
-    ░░░░░░░░░░░░░░░░░░░░   0%
+    ████████████████░░░░  60%
 ```
 
-The project is ready for continued portfolio extension, especially around broker-backed Kafka validation and deployment-grade configuration.
+The project is ready for portfolio demos and small follow-up validation. The Kafka path is optionally broker-backed via a dedicated profile, while the default local path stays mock-based and easy to run.
 
 The project is being developed incrementally, starting from architecture and contracts before implementation.
 

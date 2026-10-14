@@ -4,6 +4,12 @@ This guide explains how to run Corevia locally with a **fast, lightweight demo e
 
 The default demo intentionally mocks most external systems while keeping PostgreSQL real. This allows the important banking middleware behavior—idempotency, transaction state, `UNKNOWN` outcomes, persistence, and auditability—to remain realistic without requiring a full Kafka/T24/observability stack.
 
+Current default behavior in the project:
+
+* Kafka is mocked by default for local/demo runs
+* Security is disabled by default unless the `security` profile is active
+* A real Kafka broker path exists as an optional `kafka` profile for proof-of-concept validation when Docker is available
+
 ---
 
 ## 1. Demo Philosophy
@@ -62,12 +68,14 @@ Only the adapters change.
 
 Corevia supports three main local/runtime modes.
 
-| Mode         | PostgreSQL | T24             | Kafka          | Auth       | Observability           | Purpose                 |
-| ------------ | ---------- | --------------- | -------------- | ---------- | ----------------------- | ----------------------- |
-| `demo`       | Real       | In-process mock | In-memory mock | Local mock | Logs + Actuator         | Fast interview/demo     |
-| `local`      | Real       | HTTP mock       | Real Kafka     | Local/mock | Basic                   | Integration development |
-| `full`       | Real       | HTTP mock       | Real Kafka     | Mock OIDC  | Prometheus/Grafana/OTel | Architecture showcase   |
-| `production` | Real       | Real T24        | Real Kafka     | Real OIDC  | Full stack              | Production deployment   |
+| Mode         | PostgreSQL | T24             | Kafka          | Auth       | Observability           | Purpose                                  |
+| ------------ | ---------- | --------------- | -------------- | ---------- | ----------------------- | ---------------------------------------- |
+| `default`    | Real       | In-process mock | Mock Kafka     | Disabled   | Logs + Actuator         | Fast local demo / portfolio walkthrough   |
+| `security`   | Real       | In-process mock | Mock Kafka     | JWT required | Logs + Actuator         | Protected-route validation                |
+| `kafka`      | Real       | In-process mock | Real Kafka     | Optional    | Logs + Actuator         | Optional broker proof-of-concept           |
+| `local`      | Real       | HTTP mock       | Real Kafka     | Local/mock | Basic                   | Integration development                  |
+| `full`       | Real       | HTTP mock       | Real Kafka     | Mock OIDC  | Prometheus/Grafana/OTel | Architecture showcase                    |
+| `production` | Real       | Real T24        | Real Kafka     | Real OIDC  | Full stack              | Production deployment                    |
 
 ### Recommended
 
@@ -208,24 +216,38 @@ These credentials are for local development only.
 
 ---
 
-# 6. Start Corevia in Demo Mode
+# 6. Start Corevia in Default Local Mode
 
 Run:
 
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+./mvnw spring-boot:run
 ```
 
 On Windows:
 
 ```bash
-mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=demo
+mvnw.cmd spring-boot:run
 ```
 
 Alternatively:
 
 ```bash
-java -jar target/corevia.jar --spring.profiles.active=demo
+java -jar target/corevia.jar
+```
+
+This uses the default mock-based configuration: mock Kafka, no forced auth, and the mock T24-style adapter behavior.
+
+For protected routes:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=security
+```
+
+For the optional broker-backed Kafka proof-of-concept:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=kafka
 ```
 
 Corevia should start on:
