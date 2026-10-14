@@ -22,6 +22,13 @@ spring:
     init:
       mode: never
 
+corevia:
+  security:
+    enabled: false
+    jwt-secret: dev-local-secret-change-me-very-long-key-123456
+    issuer: corevia-local
+    audience: corevia-api
+
 server:
   port: 8080
 
