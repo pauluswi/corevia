@@ -20,7 +20,7 @@ class JwtTokenServiceTest {
     @Test
     void tamperedTokenIsRejected() {
         String token = jwtTokenService.createToken("demo-user");
-        String tampered = token.substring(0, token.length() - 1) + "A";
+        String tampered = token + "X";
 
         assertThat(jwtTokenService.isValid(tampered)).isFalse();
     }
