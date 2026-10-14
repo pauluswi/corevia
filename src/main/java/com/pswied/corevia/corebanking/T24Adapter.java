@@ -9,18 +9,43 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.LongSupplier;
 import org.springframework.stereotype.Component;
 
 @Component
 public class T24Adapter implements CoreBankingGateway {
 
+    @FunctionalInterface
+    interface TransferOperation {
+        TransferResult execute(TransferRequest request) throws Exception;
+    }
+
     private static final int MAX_ATTEMPTS = 3;
     private static final long CIRCUIT_BREAKER_TIMEOUT_MS = 30_000L;
     private static final long REQUEST_TIMEOUT_SECONDS = 2L;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final ExecutorService executor;
+    private final TransferOperation transferOperation;
+    private final LongSupplier clock;
     private final AtomicInteger consecutiveFailures = new AtomicInteger();
     private volatile long circuitOpenUntil = 0L;
+
+    public T24Adapter() {
+        this(request -> new TransferResult(
+            "T24-" + UUID.randomUUID(),
+            "SUCCESS",
+            request.sourceAccount(),
+            request.destinationAccount(),
+            request.amount(),
+            request.currency()
+        ), Executors.newFixedThreadPool(4), System::currentTimeMillis);
+    }
+
+    T24Adapter(TransferOperation transferOperation, ExecutorService executor, LongSupplier clock) {
+        this.transferOperation = transferOperation;
+        this.executor = executor;
+        this.clock = clock;
+    }
 
     @Override
     public Customer getCustomer(String customerId) {
@@ -34,29 +59,19 @@ public class T24Adapter implements CoreBankingGateway {
 
     @Override
     public TransferResult transfer(TransferRequest request) {
-        if (System.currentTimeMillis() < circuitOpenUntil) {
+        if (clock.getAsLong() < circuitOpenUntil) {
             throw new IllegalStateException("T24 circuit is open; retry later");
         }
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                TransferResult result = executeWithTimeout(() -> {
-                    String transactionId = "T24-" + UUID.randomUUID();
-                    return new TransferResult(
-                        transactionId,
-                        "SUCCESS",
-                        request.sourceAccount(),
-                        request.destinationAccount(),
-                        request.amount(),
-                        request.currency()
-                    );
-                });
+                TransferResult result = executeWithTimeout(() -> transferOperation.execute(request));
                 consecutiveFailures.set(0);
                 return result;
             } catch (Exception ex) {
                 if (attempt == MAX_ATTEMPTS) {
                     if (consecutiveFailures.incrementAndGet() >= 3) {
-                        circuitOpenUntil = System.currentTimeMillis() + CIRCUIT_BREAKER_TIMEOUT_MS;
+                        circuitOpenUntil = clock.getAsLong() + CIRCUIT_BREAKER_TIMEOUT_MS;
                     }
                     throw new IllegalStateException("T24 transfer failed after retries", ex);
                 }
