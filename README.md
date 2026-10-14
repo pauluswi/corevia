@@ -1,5 +1,12 @@
 # Corevia
 
+![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-6DB33F?logo=springboot&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-3.9%2B-C71A36?logo=apachemaven&logoColor=white)
+![Kafka](https://img.shields.io/badge/Kafka-Optional%20Demo%20Profile-231F20?logo=apachekafka&logoColor=white)
+![Security](https://img.shields.io/badge/Security-JWT%20%2B%20Spring%20Security-4E5D94?logo=springsecurity&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Demo%20Ready-28A745)
+
 ### Banking Integration Middleware for T24 / Temenos Transact
 
 **Corevia** is a production-oriented banking integration middleware designed to connect digital banking channels with a **T24 / Temenos Transact-style core banking system**.
