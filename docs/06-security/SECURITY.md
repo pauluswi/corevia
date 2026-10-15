@@ -88,6 +88,8 @@ Audit
 
 Endpoints and integrations should require explicit configuration rather than relying on permissive defaults.
 
+For this project, the default local behavior is intentionally permissive to keep the portfolio demo runnable without external identity infrastructure. Security is therefore activated only when the `security` profile is explicitly enabled (`corevia.security.enabled=true`).
+
 ### 3.4 Secrets are externalized
 
 Passwords, tokens, private keys, and certificates must not be stored in source code.
@@ -149,7 +151,7 @@ Development:
 http://localhost
 ```
 
-may be acceptable for local development.
+may be acceptable for local development, but in this project the default local profile is intentionally non-protected to preserve demo simplicity. The dedicated `security` profile should be used when JWT enforcement is required.
 
 Production:
 

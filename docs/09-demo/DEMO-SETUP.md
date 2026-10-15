@@ -2,13 +2,14 @@
 
 This guide explains how to run Corevia locally with a **fast, lightweight demo environment**.
 
-The default demo intentionally mocks most external systems while keeping PostgreSQL real. This allows the important banking middleware behavior—idempotency, transaction state, `UNKNOWN` outcomes, persistence, and auditability—to remain realistic without requiring a full Kafka/T24/observability stack.
+The default local setup intentionally mocks most external systems while keeping PostgreSQL real. This allows the important banking middleware behavior—idempotency, transaction state, `UNKNOWN` outcomes, persistence, and auditability—to remain realistic without requiring a full Kafka/T24/observability stack.
 
 Current default behavior in the project:
 
 * Kafka is mocked by default for local/demo runs
 * Security is disabled by default unless the `security` profile is active
 * A real Kafka broker path exists as an optional `kafka` profile for proof-of-concept validation when Docker is available
+* The project intentionally keeps local execution simple and presentation-friendly
 
 ---
 
@@ -16,11 +17,13 @@ Current default behavior in the project:
 
 Corevia is designed as production-oriented banking middleware, but running every external dependency locally would make the portfolio demo unnecessarily heavy.
 
-The local demo therefore follows this principle:
+The local default therefore follows this principle:
 
 > **Mock external behavior, not the architecture.**
 
 The application still uses the same ports/interfaces that would be used in production.
+
+This is intentionally implemented as a default local profile rather than a separate `demo` profile, so the app runs with the simplest setup by default.
 
 ```text
 Production
@@ -79,10 +82,10 @@ Corevia supports three main local/runtime modes.
 
 ### Recommended
 
-For an interview or portfolio demonstration, use:
+For an interview or portfolio demonstration, use the default app startup:
 
-```text
-demo
+```bash
+./mvnw spring-boot:run
 ```
 
 It should start in seconds and require only PostgreSQL.
@@ -250,6 +253,8 @@ For the optional broker-backed Kafka proof-of-concept:
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=kafka
 ```
 
+This is the project’s current profile model and should be treated as the source of truth for local execution.
+
 Corevia should start on:
 
 ```text
@@ -262,7 +267,7 @@ http://localhost:8080
 
 ## 7.1 Mock T24 Gateway
 
-Demo Mode uses:
+Default local mode uses:
 
 ```text
 MockT24Gateway
